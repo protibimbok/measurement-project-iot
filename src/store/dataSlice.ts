@@ -45,7 +45,7 @@ export const chartVals = createSlice({
       if (entries.length == 0) {
         return;
       }
-      const start = Math.max(state.values.length + entries.length - 120, 0);
+      const start = Math.max(state.values.length + entries.length - 60, 0);
       const values = [];
       const times = [];
       let idx = 0,

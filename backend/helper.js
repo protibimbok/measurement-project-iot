@@ -25,7 +25,7 @@ export const getPage = (db, name, lastID) => {
       return;
     }
     const query =
-      "SELECT * FROM sensor_entries WHERE name = ? AND id > ? ORDER BY id DESC LIMIT 120";
+      "SELECT * FROM sensor_entries WHERE name = ? AND id > ? ORDER BY id DESC LIMIT 60";
     db.all(query, [name, lastID], (err, rows) => {
       if (err) {
         console.log("Name:", err.message);
