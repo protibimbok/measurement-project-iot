@@ -52,6 +52,14 @@ app.post("/", async (req, res) => {
 });
 
 // GET endpoint to get latest value of all names
+app.get("/erase", async (req, res) => {
+  await asyncSql(db, "DELETE FROM `sensor_entries`");
+  res.json({
+    message: "Data cleared successfully!"
+  });
+});
+
+// GET endpoint to get latest value of all names
 app.get("/:name?", async (req, res) => {
   const { name } = req.params;
   const { last, count } = req.query;

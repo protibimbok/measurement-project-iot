@@ -32,6 +32,12 @@ function App() {
     setLastId(0);
   }, [name, dispatch]);
 
+  const clearData = async () => {
+    await fetch(BASE_URL + '/erase');
+    setLastId(0);
+    dispatch(resetChart());
+  }
+
   return (
     <>
       <div className="navbar bg-base-100 shadow-md">
@@ -54,6 +60,13 @@ function App() {
           </svg>
         </div>
         <p className="text-xl font-bold ml-3">Measurements IOT</p>
+        <button
+          className="ml-auto btn btn-outline btn-error btn-sm"
+          type="button"
+          onClick={clearData}
+        >
+          Clear Data
+        </button>
       </div>
       <div className="container pt-10 mx-auto">
         <Stats active={name} onClick={setName} />
