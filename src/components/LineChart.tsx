@@ -7,6 +7,10 @@ import { ChartData } from "../store/dataSlice";
 // Register necessary Chart.js plugins
 Chart.register(...registerables);
 
+const getTime = (x: number) => {
+  return x % 600;
+};
+
 function createLineChart(canvasEl: HTMLCanvasElement, data: ChartData): Chart {
   const ctx = canvasEl.getContext("2d") as CanvasRenderingContext2D;
 
@@ -17,13 +21,15 @@ function createLineChart(canvasEl: HTMLCanvasElement, data: ChartData): Chart {
   const lineChart = new Chart(ctx, {
     type: "line",
     data: {
-      labels: data.times.map(String),
+      labels: data.times.map(getTime),
       datasets: [
         {
-          label: "Temperature",
+          label: "Value",
           data: data.values,
           borderColor: "#4CAF50",
           backgroundColor: gradient,
+          cubicInterpolationMode: "monotone",
+          tension: 0.2,
         },
       ],
     },
@@ -51,12 +57,16 @@ export default function LineChart() {
   const [chart, setChart] = useState<Chart>();
 
   useEffect(() => {
-    const chart = createLineChart(canvasRef.current!, {
+    if (!canvasRef.current) {
+      return;
+    }
+    const chart = createLineChart(canvasRef.current, {
       times: [],
       values: [],
     });
     setChart(chart);
     return () => {
+      setChart(undefined);
       chart.destroy();
     };
   }, []);
@@ -65,7 +75,7 @@ export default function LineChart() {
     if (!chart) {
       return;
     }
-    chart.data.labels = data.times.map(String);
+    chart.data.labels = data.times.map(getTime);
     chart.data.datasets[0].data = data.values;
     chart.update();
   }, [chart, data]);

@@ -50,7 +50,7 @@ function App() {
         </div>
         <p className="text-xl font-bold ml-3">Measurements IOT</p>
       </div>
-      <div className="container pt-32 mx-auto">
+      <div className="container pt-10 mx-auto">
         <Stats />
       </div>
       <div className="container mx-auto">
