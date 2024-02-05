@@ -47,7 +47,7 @@ app.post("/", async (req, res) => {
   res.json({
     error: "Data inserted!",
   });
-  
+
 });
 
 // GET endpoint to get latest value of all names
@@ -64,6 +64,6 @@ app.get("/:name?", async (req, res) => {
 });
 
 // Start the server
-app.listen(port, () => {
+app.listen(port, '0.0.0.0', () => {
   console.log(`Server is running on http://localhost:${port}`);
 });
