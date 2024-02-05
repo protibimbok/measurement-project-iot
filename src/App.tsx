@@ -16,14 +16,14 @@ function App() {
         BASE_URL + `/${name}?&last=${lastId}&count=0`
       ).then((res) => res.json());
       const entries = res.pageData;
-      if (entries.length === 0) {
+      if (entries.length === 0 || entries[0].id <= lastId) {
         return;
       }
       setLastId(entries[0].id);
       dispatch(setLatest(res.latest));
       dispatch(setChartData(entries));
     };
-    const interval = setInterval(fetchLatest, 1000);
+    const interval = setInterval(fetchLatest, 500);
     return () => clearInterval(interval);
   }, [name, lastId, dispatch]);
 
