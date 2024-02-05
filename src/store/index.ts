@@ -1,8 +1,9 @@
 import { configureStore } from "@reduxjs/toolkit";
-import { latestReducer, chartReducer, LatestData } from "./dataSlice";
+import { latestReducer, chartReducer, LatestData, ChartData } from "./dataSlice";
 
 export interface StoreState {
-  latest: LatestData
+  latest: LatestData;
+  chart: ChartData;
 }
 
 export default configureStore({

@@ -1,6 +1,7 @@
 import express from "express";
 import sqlite3 from "sqlite3";
 import cors from "cors";
+import { getLatest, getPage } from "./helper.js";
 
 const app = express();
 const port = 3000;
@@ -32,51 +33,16 @@ app.post("/", (req, res) => {
 });
 
 // GET endpoint to get latest value of all names
-app.get("/:name?", (req, res) => {
-  const body = {};
-
+app.get("/:name?", async (req, res) => {
   const { name } = req.params;
-  const { page, timestamp } = req.query;
-  const pageSize = 10; // Set your desired page size
+  const { last, count } = req.query;
 
-  const offset = (page - 1) * pageSize;
-  const query =
-    "SELECT * FROM sensor_entries WHERE name = ? AND timestamp <= ? ORDER BY timestamp DESC LIMIT ? OFFSET ?";
-
-  if (!name) {
-    body.name = [];
-  } else {
-    db.all(query, [name, timestamp, pageSize, offset], (err, rows) => {
-      if (err) {
-        console.log("Name:", err.message);
-        body.name = [];
-        return;
-      }
-      body.name = rows;
-      if (body.latest) {
-        res.json(body);
-      }
-    });
-  }
-
-  db.all(
-    "SELECT name, MAX(timestamp) AS timestamp, value FROM sensor_entries GROUP BY name",
-    (err, rows) => {
-      if (err) {
-        console.log("Latest:", err.message);
-        body.latest = {};
-        return;
-      }
-      const data = {};
-      rows.forEach((row) => {
-        data[row.name] = parseFloat(row.value).toFixed(2);
-      });
-      body.latest = data;
-      if (body.name) {
-        res.json(body);
-      }
-    }
-  );
+  const data = await Promise.all([getLatest(db), getPage(db, name, last)]);
+  res.json({
+    latest: data[0],
+    pageData: data[1],
+    count
+  });
 });
 
 // Start the server

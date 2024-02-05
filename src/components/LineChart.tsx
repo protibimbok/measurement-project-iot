@@ -1,36 +1,28 @@
-import { LegacyRef, useEffect, useRef } from "react";
-import { Chart, registerables } from 'chart.js';
+import { LegacyRef, useEffect, useRef, useState } from "react";
+import { Chart, registerables } from "chart.js";
+import { useSelector } from "react-redux";
+import { StoreState } from "../store";
+import { ChartData } from "../store/dataSlice";
 
 // Register necessary Chart.js plugins
 Chart.register(...registerables);
 
-interface ChartData {
-  time: number[];
-  temperature: number[];
-}
-
-function createLineChart(canvasEl: HTMLCanvasElement): Chart {
-  const ctx = canvasEl.getContext('2d') as CanvasRenderingContext2D;
-
-  // Example data, replace it with your own data
-  const data: ChartData = {
-    time: [0, 1, 2, 3, 4, 5],
-    temperature: [20, 22, 25, 23, 21, 19],
-  };
+function createLineChart(canvasEl: HTMLCanvasElement, data: ChartData): Chart {
+  const ctx = canvasEl.getContext("2d") as CanvasRenderingContext2D;
 
   const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-  gradient.addColorStop(0, 'rgba(75,192,192,0.4)');
-  gradient.addColorStop(1, 'rgba(75,192,192,0)');
+  gradient.addColorStop(0, "rgba(75,192,192,0.4)");
+  gradient.addColorStop(1, "rgba(75,192,192,0)");
 
   const lineChart = new Chart(ctx, {
-    type: 'line',
+    type: "line",
     data: {
-      labels: data.time.map(String),
+      labels: data.times.map(String),
       datasets: [
         {
-          label: 'Temperature',
-          data: data.temperature,
-          borderColor: '#4CAF50',
+          label: "Temperature",
+          data: data.values,
+          borderColor: "#4CAF50",
           backgroundColor: gradient,
         },
       ],
@@ -38,12 +30,12 @@ function createLineChart(canvasEl: HTMLCanvasElement): Chart {
     options: {
       scales: {
         x: {
-          type: 'linear',
-          position: 'bottom',
+          type: "linear",
+          position: "bottom",
         },
         y: {
-          type: 'linear',
-          position: 'left',
+          type: "linear",
+          position: "left",
         },
       },
     },
@@ -52,20 +44,38 @@ function createLineChart(canvasEl: HTMLCanvasElement): Chart {
   return lineChart;
 }
 
-
 export default function LineChart() {
   const canvasRef = useRef<HTMLCanvasElement>();
 
-  
+  const data = useSelector((state: StoreState) => state.chart) as ChartData;
+  const [chart, setChart] = useState<Chart>();
 
   useEffect(() => {
-    const chart = createLineChart(canvasRef.current!);
+    const chart = createLineChart(canvasRef.current!, {
+      times: [],
+      values: [],
+    });
+    setChart(chart);
     return () => {
-        chart.destroy();
-    }
+      chart.destroy();
+    };
   }, []);
 
-  return <div className="card shadow mt-10">
-    <canvas className="w-full h-96" ref={canvasRef as LegacyRef<HTMLCanvasElement>}></canvas>
-  </div>;
+  useEffect(() => {
+    if (!chart) {
+      return;
+    }
+    chart.data.labels = data.times.map(String);
+    chart.data.datasets[0].data = data.values;
+    chart.update();
+  }, [chart, data]);
+
+  return (
+    <div className="card shadow mt-10">
+      <canvas
+        className="w-full h-96"
+        ref={canvasRef as LegacyRef<HTMLCanvasElement>}
+      ></canvas>
+    </div>
+  );
 }

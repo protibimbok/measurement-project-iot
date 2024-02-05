@@ -1,21 +1,32 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
-import { setLatest } from "./store/dataSlice";
+import { setLatest, setChartData } from "./store/dataSlice";
 import LineChart from "./components/LineChart";
 import Stats from "./components/Stat";
 import { BASE_URL } from "./utils/const";
 
-
 function App() {
   const dispatch = useDispatch();
+  const [name] = useState("temp");
+  const [lastId, setLastId] = useState(0);
+
   useEffect(() => {
     const fetchLatest = async () => {
-      const data = await fetch(BASE_URL).then((res) => res.json());
-      dispatch(setLatest(data.latest));
+      const res = await fetch(
+        BASE_URL + `/${name}?&last=${lastId}&count=0`
+      ).then((res) => res.json());
+      const entries = res.pageData;
+      if (entries.length === 0) {
+        return;
+      }
+      setLastId(entries[0].id);
+      dispatch(setLatest(res.latest));
+      dispatch(setChartData(entries));
     };
     const interval = setInterval(fetchLatest, 1000);
     return () => clearInterval(interval);
-  });
+  }, [name, lastId, dispatch]);
+
   return (
     <>
       <div className="navbar bg-base-100 shadow-md">

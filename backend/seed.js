@@ -27,4 +27,4 @@ function seedData() {
   });
 }
 
-setInterval(seedData, 5000);
+setInterval(seedData, 2000);
