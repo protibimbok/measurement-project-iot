@@ -7,7 +7,12 @@ import { ChartData } from "../store/dataSlice";
 // Register necessary Chart.js plugins
 Chart.register(...registerables);
 
-function createLineChart(canvasEl: HTMLCanvasElement, data: ChartData): Chart {
+interface ChartDataLocal {
+  times: number[];
+  values: number[];
+}
+
+function createLineChart(canvasEl: HTMLCanvasElement, data: ChartDataLocal): Chart {
   const ctx = canvasEl.getContext("2d") as CanvasRenderingContext2D;
 
   const gradient = ctx.createLinearGradient(0, 0, 0, 400);
@@ -41,6 +46,7 @@ function createLineChart(canvasEl: HTMLCanvasElement, data: ChartData): Chart {
         },
       },
       maintainAspectRatio: false,
+      animation: false
     },
   });
 
@@ -75,6 +81,12 @@ export default function LineChart() {
     }
     chart.data.labels = data.times;
     chart.data.datasets[0].data = data.values;
+
+    // @ts-expect-error i don't care
+    chart.options.scales.x.min = data.minTime;
+    // @ts-expect-error i don't care
+    chart.options.scales.x.max = data.maxTime + 5;
+
     chart.update();
   }, [chart, data]);
 

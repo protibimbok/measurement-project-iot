@@ -10,6 +10,8 @@ export interface LatestData {
 export interface ChartData {
   values: number[];
   times: number[];
+  minTime: number;
+  maxTime: number;
 }
 
 export interface EntryType {
@@ -34,6 +36,8 @@ export const chartVals = createSlice({
   initialState: {
     values: [],
     times: [],
+    minTime: 0,
+    maxTime: 0,
   } as ChartData,
   reducers: {
     setChartData(state, action) {
@@ -42,20 +46,26 @@ export const chartVals = createSlice({
         return;
       }
       const start = Math.max(state.values.length + entries.length - 120, 0);
-      const size = state.times.length - start + entries.length;
-
-      const values = Array(size);
-      const times = Array(size);
+      const values = [];
+      const times = [];
       let idx = 0,
         gIdx = start;
-      for (; gIdx < state.times.length; gIdx++) {
-        times[idx] = state.times[gIdx];
-        values[idx] = state.values[gIdx];
-        idx++;
+
+      let minTime = state.minTime;
+      let gIdx2 = entries.length - 1;
+      if (state.times.length > 0) {
+        minTime = state.times[start];
+        for (; gIdx < state.times.length; gIdx++) {
+          times[idx] = state.times[gIdx];
+          values[idx] = state.values[gIdx];
+          idx++;
+        }
+      } else {
+        minTime = entries[gIdx2].timestamp;
       }
-      gIdx = entries.length - 1;
-      for (; gIdx > -1; gIdx--) {
-        const entry = entries[gIdx];
+
+      for (; gIdx2 > -1; gIdx2--) {
+        const entry = entries[gIdx2];
         times[idx] = entry.timestamp;
         values[idx] = entry.value;
         idx++;
@@ -63,14 +73,18 @@ export const chartVals = createSlice({
       return {
         times,
         values,
+        minTime,
+        maxTime: entries[0].timestamp,
       };
     },
     resetChart() {
       return {
         times: [],
-        values: []
+        values: [],
+        minTime: 0,
+        maxTime: 0,
       };
-    }
+    },
   },
 });
 
