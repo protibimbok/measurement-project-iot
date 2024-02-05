@@ -7,10 +7,6 @@ import { ChartData } from "../store/dataSlice";
 // Register necessary Chart.js plugins
 Chart.register(...registerables);
 
-const getTime = (x: number) => {
-  return x % 600;
-};
-
 function createLineChart(canvasEl: HTMLCanvasElement, data: ChartData): Chart {
   const ctx = canvasEl.getContext("2d") as CanvasRenderingContext2D;
 
@@ -21,7 +17,7 @@ function createLineChart(canvasEl: HTMLCanvasElement, data: ChartData): Chart {
   const lineChart = new Chart(ctx, {
     type: "line",
     data: {
-      labels: data.times.map(getTime),
+      labels: data.times,
       datasets: [
         {
           label: "Value",
@@ -37,13 +33,14 @@ function createLineChart(canvasEl: HTMLCanvasElement, data: ChartData): Chart {
       scales: {
         x: {
           type: "linear",
-          position: "bottom",
+          position: "bottom"
         },
         y: {
           type: "linear",
           position: "left",
         },
       },
+      maintainAspectRatio: false,
     },
   });
 
@@ -57,6 +54,7 @@ export default function LineChart() {
   const [chart, setChart] = useState<Chart>();
 
   useEffect(() => {
+    
     if (!canvasRef.current) {
       return;
     }
@@ -75,7 +73,7 @@ export default function LineChart() {
     if (!chart) {
       return;
     }
-    chart.data.labels = data.times.map(getTime);
+    chart.data.labels = data.times;
     chart.data.datasets[0].data = data.values;
     chart.update();
   }, [chart, data]);
@@ -83,7 +81,7 @@ export default function LineChart() {
   return (
     <div className="card shadow mt-10">
       <canvas
-        className="w-full h-96"
+        className="w-full h-[650px]"
         ref={canvasRef as LegacyRef<HTMLCanvasElement>}
       ></canvas>
     </div>

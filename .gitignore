@@ -27,3 +27,4 @@ venv
 **/__pycache__
 *.sqlite
 *.db
+*-journal

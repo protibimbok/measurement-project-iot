@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
-import { setLatest, setChartData } from "./store/dataSlice";
+import { setLatest, setChartData, resetChart } from "./store/dataSlice";
 import LineChart from "./components/LineChart";
 import Stats from "./components/Stat";
 import { BASE_URL } from "./utils/const";
 
 function App() {
   const dispatch = useDispatch();
-  const [name] = useState("temp");
+  const [name, setName] = useState("light");
   const [lastId, setLastId] = useState(0);
 
   useEffect(() => {
@@ -26,6 +26,11 @@ function App() {
     const interval = setInterval(fetchLatest, 500);
     return () => clearInterval(interval);
   }, [name, lastId, dispatch]);
+
+  useEffect(() => {
+    dispatch(resetChart());
+    setLastId(0);
+  }, [name, dispatch]);
 
   return (
     <>
@@ -51,10 +56,10 @@ function App() {
         <p className="text-xl font-bold ml-3">Measurements IOT</p>
       </div>
       <div className="container pt-10 mx-auto">
-        <Stats />
+        <Stats active={name} onClick={setName} />
       </div>
       <div className="container mx-auto">
-        <LineChart />
+        <LineChart key={name} />
       </div>
     </>
   );

@@ -23,6 +23,7 @@ app.post("/", async (req, res) => {
   if (!body.timestamp) {
     body.timestamp = Math.floor(Date.now() / 1000);
   }
+  body.pressure = body.pressure / 1000;
   const promises = [];
   ["temp", "humidity", "light", "co2", "pressure"].forEach((name) => {
     if (!body[name]) {
@@ -39,13 +40,13 @@ app.post("/", async (req, res) => {
 
   const dbRes = await Promise.all(promises);
   for (let i = 0; i < dbRes.length; i++) {
-    const err = dbRes[i].value[0];
+    const err = dbRes[i][0];
     if (err) {
       return res.status(500).json({ error: err.message });
     }
   }
   res.json({
-    error: "Data inserted!",
+    message: "Data inserted!",
   });
 
 });

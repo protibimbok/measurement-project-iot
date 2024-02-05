@@ -65,11 +65,17 @@ export const chartVals = createSlice({
         values,
       };
     },
+    resetChart() {
+      return {
+        times: [],
+        values: []
+      };
+    }
   },
 });
 
 export const { setLatest } = latestVals.actions;
-export const { setChartData } = chartVals.actions;
+export const { setChartData, resetChart } = chartVals.actions;
 
 export const latestReducer = latestVals.reducer;
 export const chartReducer = chartVals.reducer;
