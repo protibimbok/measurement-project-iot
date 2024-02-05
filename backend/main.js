@@ -1,7 +1,7 @@
 import express from "express";
 import sqlite3 from "sqlite3";
 import cors from "cors";
-import { getLatest, getPage } from "./helper.js";
+import { asyncSql, getLatest, getPage } from "./helper.js";
 
 const app = express();
 const port = 3000;
@@ -18,18 +18,36 @@ app.use(cors());
 app.use(express.json());
 
 // POST endpoint to add sensor entry
-app.post("/", (req, res) => {
-  const { name, value, timestamp } = req.body;
-  db.run(
-    "INSERT INTO sensor_entries (name, value, timestamp) VALUES (?, ?, ?)",
-    [name, value, timestamp],
-    function (err) {
-      if (err) {
-        return res.status(500).json({ error: err.message });
-      }
-      res.json({ id: this.lastID });
+app.post("/", async (req, res) => {
+  const body = req.body;
+  if (!body.timestamp) {
+    return res.status(422).json({ error: "No timestamp is present" });
+  }
+  const promises = [];
+  ["temp", "humidity", "light", "co2", "pressure"].forEach((name) => {
+    if (!body[name]) {
+      return;
     }
-  );
+    promises.push(
+      asyncSql(
+        db,
+        "INSERT INTO sensor_entries (name, value, timestamp) VALUES (?, ?, ?)",
+        [name, body[name], body.timestamp]
+      )
+    );
+  });
+
+  const dbRes = await Promise.all(promises);
+  for (let i = 0; i < dbRes.length; i++) {
+    const err = dbRes[i].value[0];
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+  }
+  res.json({
+    error: "Data inserted!",
+  });
+  
 });
 
 // GET endpoint to get latest value of all names
@@ -41,7 +59,7 @@ app.get("/:name?", async (req, res) => {
   res.json({
     latest: data[0],
     pageData: data[1],
-    count
+    count,
   });
 });
 

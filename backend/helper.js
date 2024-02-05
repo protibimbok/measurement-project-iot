@@ -36,3 +36,11 @@ export const getPage = (db, name, lastID) => {
     });
   });
 };
+
+export const asyncSql = (db, sql, binds = []) => {
+  return new Promise((resolve) => {
+    db.run(sql, binds, function (err, rows) {
+      resolve([err, rows, this]);
+    });
+  });
+};
