@@ -21,7 +21,7 @@ app.use(express.json());
 app.post("/", async (req, res) => {
   const body = req.body;
   if (!body.timestamp) {
-    return res.status(422).json({ error: "No timestamp is present" });
+    body.timestamp = Math.floor(Date.now() / 1000);
   }
   const promises = [];
   ["temp", "humidity", "light", "co2", "pressure"].forEach((name) => {
