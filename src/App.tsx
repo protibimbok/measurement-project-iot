@@ -1,6 +1,21 @@
+import { useEffect } from "react";
+import { useDispatch } from "react-redux";
+import { setLatest } from "./store/dataSlice";
+import LineChart from "./components/LineChart";
 import Stats from "./components/Stat";
+import { BASE_URL } from "./utils/const";
+
 
 function App() {
+  const dispatch = useDispatch();
+  useEffect(() => {
+    const fetchLatest = async () => {
+      const data = await fetch(BASE_URL).then((res) => res.json());
+      dispatch(setLatest(data.latest));
+    };
+    const interval = setInterval(fetchLatest, 1000);
+    return () => clearInterval(interval);
+  });
   return (
     <>
       <div className="navbar bg-base-100 shadow-md">
@@ -26,6 +41,9 @@ function App() {
       </div>
       <div className="container pt-32 mx-auto">
         <Stats />
+      </div>
+      <div className="container mx-auto">
+        <LineChart />
       </div>
     </>
   );
