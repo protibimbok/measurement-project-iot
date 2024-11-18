@@ -71,7 +71,10 @@ export default function LineChart({ name }: ChartProps) {
   const [chart, setChart] = useState<Chart>();
   const chartRef = useRef<Chart>();
   const dataRef = useRef<ChartDataLocal>({ times: [], values: [] });
-  const minMaxRef = useRef({ min: 0, max: 0 });
+  const minMaxRef = useRef({
+    min: Math.floor(Date.now() / 1000) - LINE_ENTRIES * 2,
+    max: Math.floor(Date.now() / 1000),
+  });
 
   useEffect(() => {
     if (!canvasRef.current) {
