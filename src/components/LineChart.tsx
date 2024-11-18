@@ -1,8 +1,6 @@
 import { LegacyRef, useEffect, useRef, useState } from "react";
 import { Chart, registerables } from "chart.js";
-import { useSelector } from "react-redux";
-import { StoreState } from "../store";
-import { ChartData } from "../store/dataSlice";
+import { DataPoint } from "../utils/types";
 
 // Register necessary Chart.js plugins
 Chart.register(...registerables);
@@ -12,7 +10,10 @@ interface ChartDataLocal {
   values: number[];
 }
 
-function createLineChart(canvasEl: HTMLCanvasElement, data: ChartDataLocal): Chart {
+function createLineChart(
+  canvasEl: HTMLCanvasElement,
+  data: ChartDataLocal
+): Chart {
   const ctx = canvasEl.getContext("2d") as CanvasRenderingContext2D;
 
   const gradient = ctx.createLinearGradient(0, 0, 0, 400);
@@ -38,7 +39,13 @@ function createLineChart(canvasEl: HTMLCanvasElement, data: ChartDataLocal): Cha
       scales: {
         x: {
           type: "linear",
-          position: "bottom"
+          position: "bottom",
+          ticks: {
+            callback: (value) => {
+              const date = new Date((value as number) * 1000);
+              return date.toTimeString().split(" ")[0];
+            },
+          },
         },
         y: {
           type: "linear",
@@ -46,54 +53,90 @@ function createLineChart(canvasEl: HTMLCanvasElement, data: ChartDataLocal): Cha
         },
       },
       maintainAspectRatio: false,
-      animation: false
+      animation: false,
     },
   });
 
   return lineChart;
 }
 
-export default function LineChart() {
-  const canvasRef = useRef<HTMLCanvasElement>();
+interface ChartProps {
+  name: string;
+}
 
-  const data = useSelector((state: StoreState) => state.chart) as ChartData;
+const LINE_ENTRIES = 10;
+
+export default function LineChart({ name }: ChartProps) {
+  const canvasRef = useRef<HTMLCanvasElement>();
   const [chart, setChart] = useState<Chart>();
+  const chartRef = useRef<Chart>();
+  const dataRef = useRef<ChartDataLocal>({ times: [], values: [] });
+  const minMaxRef = useRef({ min: 0, max: 0 });
 
   useEffect(() => {
-    
     if (!canvasRef.current) {
       return;
     }
-    const chart = createLineChart(canvasRef.current, {
-      times: [],
-      values: [],
-    });
+    const chart = createLineChart(canvasRef.current, dataRef.current);
     setChart(chart);
+    chartRef.current = chart;
+
+    const data = dataRef.current;
+    // @ts-expect-error custom event
+    const addData = ({ detail }) => {
+      let min = data.times[0],
+        max = data.times.at(-1) || 0;
+      detail[name].forEach((dataPoint: DataPoint) => {
+        data.times.push(dataPoint.timestamp);
+        data.values.push(dataPoint.value);
+        if (data.times.length > LINE_ENTRIES) {
+          data.times.shift();
+          data.values.shift();
+          min = data.times[0];
+        }
+        max = data.times[data.times.length - 1];
+      });
+
+      minMaxRef.current.min = min;
+      minMaxRef.current.max = max;
+      const chart = chartRef.current;
+      if (!chart) {
+        return;
+      }
+
+      chart.data.labels = data.times;
+      chart.data.datasets[0].data = data.values;
+      chart.options!.scales!.x!.min = min;
+      chart.options!.scales!.x!.max = max + 5;
+      chart.update();
+    };
+
+    // @ts-expect-error custom event
+    document.addEventListener("newData", addData);
     return () => {
       setChart(undefined);
       chart.destroy();
+      // @ts-expect-error custom event
+      document.removeEventListener("newData", addData);
     };
-  }, []);
+  }, [name]);
 
   useEffect(() => {
+    chartRef.current = chart;
     if (!chart) {
       return;
     }
-    chart.data.labels = data.times;
-    chart.data.datasets[0].data = data.values;
-
-    // @ts-expect-error i don't care
-    chart.options.scales.x.min = data.minTime;
-    // @ts-expect-error i don't care
-    chart.options.scales.x.max = data.maxTime + 5;
-
+    chart.data.labels = dataRef.current.times;
+    chart.data.datasets[0].data = dataRef.current.values;
+    chart.options!.scales!.x!.min = minMaxRef.current.min;
+    chart.options!.scales!.x!.max = minMaxRef.current.max + 5;
     chart.update();
-  }, [chart, data]);
+  }, [chart]);
 
   return (
-    <div className="card shadow mt-10">
+    <div className="">
       <canvas
-        className="w-full h-[650px]"
+        className="w-full h-[400px]"
         ref={canvasRef as LegacyRef<HTMLCanvasElement>}
       ></canvas>
     </div>

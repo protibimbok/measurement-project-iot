@@ -1,78 +1,71 @@
 import express from "express";
 import sqlite3 from "sqlite3";
 import cors from "cors";
-import { asyncSql, getLatest, getPage } from "./helper.js";
+import { asyncQuery, asyncSql } from "./helper.js";
 
 const app = express();
 const port = 3000;
 
-// Create SQLite database and table
 const db = new sqlite3.Database("sensors.db");
 db.run(
-  "CREATE TABLE IF NOT EXISTS sensor_entries (id INTEGER PRIMARY KEY, name TEXT, value REAL, timestamp INTEGER)"
+  "CREATE TABLE IF NOT EXISTS sensor_entries (id INTEGER PRIMARY KEY, value TEXT, timestamp INTEGER)"
 );
 
-// Middleware to enable CORS
 app.use(cors());
-// Middleware to parse JSON requests
+
 app.use(express.json());
 
-// POST endpoint to add sensor entry
 app.post("/", async (req, res) => {
   const body = req.body;
-  if (!body.timestamp) {
-    body.timestamp = Math.floor(Date.now() / 1000);
+  const timestamp = body.timestamp || Math.floor(Date.now() / 1000);
+  if (body.timestamp) {
+    delete body.timestamp;
   }
-  body.pressure = body.pressure / 1000;
-  const promises = [];
-  ["temp", "humidity", "light", "co2", "pressure"].forEach((name) => {
-    if (!body[name]) {
-      return;
-    }
-    promises.push(
-      asyncSql(
-        db,
-        "INSERT INTO sensor_entries (name, value, timestamp) VALUES (?, ?, ?)",
-        [name, body[name], body.timestamp]
-      )
-    );
-  });
-
-  const dbRes = await Promise.all(promises);
-  for (let i = 0; i < dbRes.length; i++) {
-    const err = dbRes[i][0];
-    if (err) {
-      return res.status(500).json({ error: err.message });
-    }
+  const [err] = await asyncSql(
+    db,
+    "INSERT INTO sensor_entries (value, timestamp) VALUES (?, ?, ?)",
+    [JSON.stringify(body), timestamp]
+  );
+  if (err) {
+    return res.status(500).json({ error: err.message });
   }
   res.json({
     message: "Data inserted!",
   });
-
 });
 
-// GET endpoint to get latest value of all names
 app.get("/erase", async (req, res) => {
   await asyncSql(db, "DELETE FROM `sensor_entries`");
   res.json({
-    message: "Data cleared successfully!"
+    message: "Data cleared successfully!",
   });
 });
 
-// GET endpoint to get latest value of all names
-app.get("/:name?", async (req, res) => {
-  const { name } = req.params;
-  const { last, count } = req.query;
+app.get("/refresh", async (req, res) => {
+  const { last } = req.query;
 
-  const data = await Promise.all([getLatest(db), getPage(db, name, last)]);
+  let sql = "";
+  const binds = [];
+
+  if (!last || last == "0") {
+    const timestamp = Math.floor(Date.now() / 1000);
+    sql = `SELECT * FROM sensor_entries WHERE ( ${timestamp} - timestamp) < 60 ORDER BY id DESC LIMIT 10`;
+  } else {
+    sql = "SELECT * FROM sensor_entries WHERE id > ? ORDER BY id DESC LIMIT 10";
+    binds.push(last);
+  }
+
+  const [err, rows] = await asyncQuery(db, sql, binds);
+
+  if (err) {
+    return res.status(500).json({ error: err.message });
+  }
+
   res.json({
-    latest: data[0],
-    pageData: data[1],
-    count,
+    data: rows || [],
   });
 });
 
-// Start the server
-app.listen(port, '0.0.0.0', () => {
+app.listen(port, "0.0.0.0", () => {
   console.log(`Server is running on http://localhost:${port}`);
 });

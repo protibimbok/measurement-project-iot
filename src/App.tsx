@@ -1,42 +1,70 @@
-import { useEffect, useState } from "react";
-import { useDispatch } from "react-redux";
-import { setLatest, setChartData, resetChart } from "./store/dataSlice";
+import { useEffect, useRef, useState } from "react";
 import LineChart from "./components/LineChart";
-import Stats from "./components/Stat";
 import { BASE_URL } from "./utils/const";
+import { DataPoint } from "./utils/types";
+
+interface DataRow {
+  id: number;
+  value: string;
+  timestamp: number;
+}
 
 function App() {
-  const dispatch = useDispatch();
-  const [name, setName] = useState("light");
   const [lastId, setLastId] = useState(0);
+  const isLoading = useRef(false);
 
   useEffect(() => {
     const fetchLatest = async () => {
-      const res = await fetch(
-        BASE_URL + `/${name}?&last=${lastId}&count=0`
-      ).then((res) => res.json());
-      const entries = res.pageData;
+      if (isLoading.current) {
+        return;
+      }
+      isLoading.current = true;
+      const res = await fetch(BASE_URL + `/refresh?last=${lastId}`).then(
+        (res) => res.json()
+      );
+      isLoading.current = false;
+      const entries = res.data;
       if (entries.length === 0 || entries[0].id <= lastId) {
         return;
       }
+      const tempData: DataPoint[] = [];
+      const bpData: DataPoint[] = [];
+      const spo2Data: DataPoint[] = [];
+      for (let i = entries.length - 1; i >= 0; i--) {
+        const entry: DataRow = entries[i];
+        const data = JSON.parse(entry.value);
+        tempData.push({
+          value: data.temp,
+          timestamp: entry.timestamp,
+        });
+        bpData.push({
+          value: data.bp,
+          timestamp: entry.timestamp,
+        });
+        spo2Data.push({
+          value: data.spo2,
+          timestamp: entry.timestamp,
+        });
+      }
+      const dataEvent = new CustomEvent("newData", {
+        detail: {
+          temp: tempData,
+          bp: bpData,
+          spo2: spo2Data,
+        },
+      });
+      document.dispatchEvent(dataEvent);
       setLastId(entries[0].id);
-      dispatch(setLatest(res.latest));
-      dispatch(setChartData(entries));
     };
-    const interval = setInterval(fetchLatest, 500);
+    fetchLatest();
+    const interval = setInterval(fetchLatest, 1000);
     return () => clearInterval(interval);
-  }, [name, lastId, dispatch]);
-
-  useEffect(() => {
-    dispatch(resetChart());
-    setLastId(0);
-  }, [name, dispatch]);
+  }, [lastId]);
 
   const clearData = async () => {
-    await fetch(BASE_URL + '/erase');
+    await fetch(BASE_URL + "/erase");
     setLastId(0);
-    dispatch(resetChart());
-  }
+  };
 
   return (
     <>
@@ -68,11 +96,19 @@ function App() {
           Clear Data
         </button>
       </div>
-      <div className="container pt-10 mx-auto">
-        <Stats active={name} onClick={setName} />
-      </div>
-      <div className="container mx-auto">
-        <LineChart key={name} />
+      <div className="container mx-auto grid grid-cols-2 gap-4 mt-10">
+        <div className="border border-gray-200 rounded-lg p-3 card shadow mt-10">
+          <h2 className="text-2xl font-bold p-0 m-0 mb-2 text-center border-b pb-3">
+            Humidity
+          </h2>
+          <LineChart name="temp" />
+        </div>
+        <div className="border border-gray-200 rounded-lg p-3 card shadow mt-10">
+          <h2 className="text-2xl font-bold p-0 m-0 mb-2 text-center border-b pb-3">
+            Humidity
+          </h2>
+          <LineChart name="spo2" />
+        </div>
       </div>
     </>
   );

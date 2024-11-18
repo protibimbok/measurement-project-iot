@@ -1,23 +1,3 @@
-export const getLatest = (db) => {
-  return new Promise((resolve) => {
-    db.all(
-      "SELECT name, MAX(timestamp) AS timestamp, value FROM sensor_entries GROUP BY name",
-      (err, rows) => {
-        if (err) {
-          console.log("Latest:", err.message);
-          resolve({});
-        } else {
-          const data = {};
-          rows.forEach((row) => {
-            data[row.name] = parseFloat(row.value).toFixed(2);
-          });
-          resolve(data);
-        }
-      }
-    );
-  });
-};
-
 export const getPage = (db, name, lastID) => {
   return new Promise((resolve) => {
     if (!name) {
@@ -41,6 +21,14 @@ export const asyncSql = (db, sql, binds = []) => {
   return new Promise((resolve) => {
     db.run(sql, binds, function (err, rows) {
       resolve([err, rows, this]);
+    });
+  });
+};
+
+export const asyncQuery = (db, sql, binds = []) => {
+  return new Promise((resolve) => {
+    db.all(sql, binds, function (err, rows) {
+      resolve([err, rows]);
     });
   });
 };
