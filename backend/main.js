@@ -1,7 +1,7 @@
 import express from "express";
 import sqlite3 from "sqlite3";
 import cors from "cors";
-import { asyncQuery, asyncSql } from "./helper.js";
+import { asyncQuery, asyncSql, getPage } from "./helper.js";
 
 const app = express();
 const port = 3000;
@@ -61,6 +61,14 @@ app.get("/refresh", async (req, res) => {
     return res.status(500).json({ error: err.message });
   }
 
+  res.json({
+    data: rows || [],
+  });
+});
+
+app.get("/page", async (req, res) => {
+  const { page, last } = req.query;
+  const rows = await getPage(db, parseInt(page), parseInt(last));
   res.json({
     data: rows || [],
   });

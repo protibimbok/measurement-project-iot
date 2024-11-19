@@ -3,6 +3,7 @@ import LineChart from "./components/LineChart";
 import { BASE_URL } from "./utils/const";
 import { useLiveData } from "./utils/http";
 import cn from "classnames";
+import TableData from "./components/TableData";
 
 function App() {
   const [, setLastId] = useLiveData();
@@ -117,8 +118,8 @@ function App() {
           </div>
         )}
         {tab === 1 && (
-          <div className="border bg-base-100 border-base-300 rounded-box p-6">
-            Tab content 2
+          <div className="border bg-base-100 border-base-300 rounded-box">
+            <TableData />
           </div>
         )}
       </div>

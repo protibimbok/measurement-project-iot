@@ -1,12 +1,16 @@
-export const getPage = (db, name, lastID) => {
+export const getPage = (db, page, lastID) => {
   return new Promise((resolve) => {
-    if (!name) {
-      resolve([]);
-      return;
+    let query = "";
+    const binds = [];
+    if (lastID) {
+      query =
+        "SELECT * FROM sensor_entries WHERE id < ? ORDER BY id DESC LIMIT 60 OFFSET ?";
+      binds.push(lastID, (page - 1) * 60);
+    } else {
+      query = "SELECT * FROM sensor_entries ORDER BY id DESC LIMIT 60 OFFSET ?";
+      binds.push((page - 1) * 60);
     }
-    const query =
-      "SELECT * FROM sensor_entries WHERE name = ? AND id > ? ORDER BY id DESC LIMIT 60";
-    db.all(query, [name, lastID], (err, rows) => {
+    db.all(query, binds, (err, rows) => {
       if (err) {
         console.log("Name:", err.message);
         resolve([]);
