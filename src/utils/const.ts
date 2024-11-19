@@ -1,1 +1,0 @@
-export const BASE_URL = `http://${location.hostname}:3000`;
