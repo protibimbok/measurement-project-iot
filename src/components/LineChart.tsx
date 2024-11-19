@@ -139,7 +139,7 @@ export default function LineChart({ name }: ChartProps) {
   return (
     <div className="">
       <canvas
-        className="w-full h-[400px]"
+        className="w-full h-[350px]"
         ref={canvasRef as LegacyRef<HTMLCanvasElement>}
       ></canvas>
     </div>

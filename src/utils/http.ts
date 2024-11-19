@@ -1,105 +1,63 @@
-/**
- * Thanks to
- * https://usehooks-ts.com/react-hook/use-fetch
- */
+import { useEffect, useRef, useState } from "react";
+import { BASE_URL } from "./const";
+import { DataPoint } from "./types";
 
-import { useEffect, useReducer, useRef } from "react";
-
-/**
- * Represents the state of an HTTP request.
- * @template T - The type of data expected in the response.
- * @interface State
- * @property {T | undefined} data - The data received from the HTTP request.
- * @property {Error | undefined} error - An error object if the request encounters an error.
- */
-interface State<T> {
-  data?: T;
-  error?: Error;
+export interface DataRow {
+  id: number;
+  value: string;
+  timestamp: number;
 }
-
-/**
- * Represents a cache of data for different URLs.
- * @template T - The type of data stored in the cache.
- * @type {object} Cache
- */
-type Cache<T> = Record<string, T>;
-
-/**
- * Represents the possible actions that can be dispatched in the fetchReducer.
- * @template T - The type of data expected in the response.
- * @type {object} Action
- */
-type Action<T> =
-  | { type: "loading" }
-  | { type: "fetched"; payload: T }
-  | { type: "error"; payload: Error };
-
-export function useFetch<T = unknown>(
-  url?: string,
-  options?: RequestInit
-): State<T> {
-  const cache = useRef<Cache<T>>({});
-  const cancelRequest = useRef<boolean>(false);
-
-  const initialState: State<T> = {
-    error: undefined,
-    data: undefined,
-  };
-
-  const fetchReducer = (state: State<T>, action: Action<T>): State<T> => {
-    switch (action.type) {
-      case "loading":
-        return { ...initialState };
-      case "fetched":
-        return { ...initialState, data: action.payload };
-      case "error":
-        return { ...initialState, error: action.payload };
-      default:
-        return state;
-    }
-  };
-
-  const [state, dispatch] = useReducer(fetchReducer, initialState);
+export const useLiveData = () => {
+  const [lastId, setLastId] = useState(0);
+  const isLoading = useRef(false);
 
   useEffect(() => {
-    if (!url) return;
-
-    cancelRequest.current = false;
-
-    const fetchData = async () => {
-      dispatch({ type: "loading" });
-
-      const currentCache = cache.current[url];
-      if (currentCache) {
-        dispatch({ type: "fetched", payload: currentCache });
+    const fetchLatest = async () => {
+      if (isLoading.current) {
         return;
       }
-
-      try {
-        const response = await fetch(url, options);
-        if (!response.ok) {
-          throw new Error(response.statusText);
-        }
-
-        const data = (await response.json()) as T;
-        cache.current[url] = data;
-        if (cancelRequest.current) return;
-
-        dispatch({ type: "fetched", payload: data });
-      } catch (error) {
-        if (cancelRequest.current) return;
-
-        dispatch({ type: "error", payload: error as Error });
+      isLoading.current = true;
+      const res = await fetch(BASE_URL + `/refresh?last=${lastId}`).then(
+        (res) => res.json()
+      );
+      isLoading.current = false;
+      const entries = res.data;
+      if (entries.length === 0 || entries[0].id <= lastId) {
+        return;
       }
+      const tempData: DataPoint[] = [];
+      const bpData: DataPoint[] = [];
+      const spo2Data: DataPoint[] = [];
+      for (let i = entries.length - 1; i >= 0; i--) {
+        const entry: DataRow = entries[i];
+        const data = JSON.parse(entry.value);
+        tempData.push({
+          value: data.temp,
+          timestamp: entry.timestamp,
+        });
+        bpData.push({
+          value: data.bp,
+          timestamp: entry.timestamp,
+        });
+        spo2Data.push({
+          value: data.spo2,
+          timestamp: entry.timestamp,
+        });
+      }
+      const dataEvent = new CustomEvent("newData", {
+        detail: {
+          temp: tempData,
+          bp: bpData,
+          spo2: spo2Data,
+        },
+      });
+      document.dispatchEvent(dataEvent);
+      setLastId(entries[0].id);
     };
+    fetchLatest();
+    const interval = setInterval(fetchLatest, 1000);
+    return () => clearInterval(interval);
+  }, [lastId]);
 
-    void fetchData();
-
-    return () => {
-      cancelRequest.current = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [url]);
-
-  return state;
-}
+  return [lastId, setLastId] as const;
+};

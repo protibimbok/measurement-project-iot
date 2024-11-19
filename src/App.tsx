@@ -1,65 +1,12 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import LineChart from "./components/LineChart";
 import { BASE_URL } from "./utils/const";
-import { DataPoint } from "./utils/types";
-
-interface DataRow {
-  id: number;
-  value: string;
-  timestamp: number;
-}
+import { useLiveData } from "./utils/http";
+import cn from "classnames";
 
 function App() {
-  const [lastId, setLastId] = useState(0);
-  const isLoading = useRef(false);
-
-  useEffect(() => {
-    const fetchLatest = async () => {
-      if (isLoading.current) {
-        return;
-      }
-      isLoading.current = true;
-      const res = await fetch(BASE_URL + `/refresh?last=${lastId}`).then(
-        (res) => res.json()
-      );
-      isLoading.current = false;
-      const entries = res.data;
-      if (entries.length === 0 || entries[0].id <= lastId) {
-        return;
-      }
-      const tempData: DataPoint[] = [];
-      const bpData: DataPoint[] = [];
-      const spo2Data: DataPoint[] = [];
-      for (let i = entries.length - 1; i >= 0; i--) {
-        const entry: DataRow = entries[i];
-        const data = JSON.parse(entry.value);
-        tempData.push({
-          value: data.temp,
-          timestamp: entry.timestamp,
-        });
-        bpData.push({
-          value: data.bp,
-          timestamp: entry.timestamp,
-        });
-        spo2Data.push({
-          value: data.spo2,
-          timestamp: entry.timestamp,
-        });
-      }
-      const dataEvent = new CustomEvent("newData", {
-        detail: {
-          temp: tempData,
-          bp: bpData,
-          spo2: spo2Data,
-        },
-      });
-      document.dispatchEvent(dataEvent);
-      setLastId(entries[0].id);
-    };
-    fetchLatest();
-    const interval = setInterval(fetchLatest, 1000);
-    return () => clearInterval(interval);
-  }, [lastId]);
+  const [, setLastId] = useLiveData();
+  const [tab, setTab] = useState(0);
 
   const clearData = async () => {
     await fetch(BASE_URL + "/erase");
@@ -98,19 +45,82 @@ function App() {
           </button>
         </div>
       </div>
-      <div className="container mx-auto grid grid-cols-2 gap-4 mt-10">
-        <div className="border border-gray-200 rounded-lg p-3 card shadow mt-10">
-          <h2 className="text-2xl font-bold p-0 m-0 mb-2 text-center border-b pb-3">
-            Humidity
-          </h2>
-          <LineChart name="temp" />
+      <div className="container mx-auto mt-10">
+        <div className="flex justify-between">
+          <div role="tablist" className="tabs tabs-lifted -mb-px">
+            <a
+              role="tab"
+              className={cn("tab !border-b-0", {
+                "tab-active": tab === 0,
+              })}
+              onClick={() => setTab(0)}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="1em"
+                height="1em"
+                viewBox="0 0 24 24"
+                className="mr-2"
+              >
+                <path
+                  fill="currentColor"
+                  d="M7 16a1.5 1.5 0 0 0 1.5-1.5a1 1 0 0 0 0-.15l2.79-2.79h.46l1.61 1.61v.08a1.5 1.5 0 1 0 3 0v-.08L20 9.5A1.5 1.5 0 1 0 18.5 8a1 1 0 0 0 0 .15l-3.61 3.61h-.16L13 10a1.49 1.49 0 0 0-3 0l-3 3a1.5 1.5 0 0 0 0 3m13.5 4h-17V3a1 1 0 0 0-2 0v18a1 1 0 0 0 1 1h18a1 1 0 0 0 0-2"
+                />
+              </svg>
+              Live Data
+            </a>
+            <a
+              role="tab"
+              className={cn("tab", {
+                "tab-active": tab === 1,
+              })}
+              onClick={() => setTab(1)}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="1em"
+                height="1em"
+                viewBox="0 0 26 26"
+                className="mr-2"
+              >
+                <path
+                  fill="currentColor"
+                  d="M13 0L8 3l5 3V4c4.955 0 9 4.045 9 9s-4.045 9-9 9s-9-4.045-9-9c0-2.453.883-4.57 2.5-6.188L5.094 5.407C3.11 7.39 2 10.053 2 13c0 6.045 4.955 11 11 11s11-4.955 11-11S19.045 2 13 2zm-2.094 6.563l-1.812.875l2.531 5A1.5 1.5 0 0 0 11.5 13v.063L8.281 16.28l1.439 1.44l3.219-3.219H13a1.5 1.5 0 0 0 1.5-1.5c0-.69-.459-1.263-1.094-1.438z"
+                />
+              </svg>
+              History
+            </a>
+          </div>
         </div>
-        <div className="border border-gray-200 rounded-lg p-3 card shadow mt-10">
-          <h2 className="text-2xl font-bold p-0 m-0 mb-2 text-center border-b pb-3">
-            Humidity
-          </h2>
-          <LineChart name="spo2" />
-        </div>
+        {tab === 0 && (
+          <div className="border bg-base-100 border-base-300 rounded-box rounded-tl-none p-6">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="col-span-2 border border-gray-200 rounded-lg p-3 card">
+                <h2 className="text-2xl font-bold p-0 m-0 mb-2 text-center border-b pb-3">
+                  Blood Pressure
+                </h2>
+                <LineChart name="bp" />
+              </div>
+              <div className="border border-gray-200 rounded-lg p-3 card">
+                <h2 className="text-2xl font-bold p-0 m-0 mb-2 text-center border-b pb-3">
+                  Temperature
+                </h2>
+                <LineChart name="temp" />
+              </div>
+              <div className="border border-gray-200 rounded-lg p-3 card">
+                <h2 className="text-2xl font-bold p-0 m-0 mb-2 text-center border-b pb-3">
+                  SPO2
+                </h2>
+                <LineChart name="spo2" />
+              </div>
+            </div>
+          </div>
+        )}
+        {tab === 1 && (
+          <div className="border bg-base-100 border-base-300 rounded-box p-6">
+            Tab content 2
+          </div>
+        )}
       </div>
     </>
   );

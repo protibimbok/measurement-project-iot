@@ -13,10 +13,10 @@
     "test": "node ./backend/test.js"
   },
   "dependencies": {
-    "@reduxjs/toolkit": "^2.1.0",
     "autoprefixer": "^10.4.17",
     "chart.js": "^4.4.1",
     "chartjs-adapter-date-fns": "^3.0.0",
+    "classnames": "^2.5.1",
     "cors": "^2.8.5",
     "daisyui": "^4.6.1",
     "date-fns": "^3.3.1",
@@ -26,7 +26,6 @@
     "react": "^18.2.0",
     "react-chartjs-2": "^5.2.0",
     "react-dom": "^18.2.0",
-    "react-redux": "^9.1.0",
     "sqlite3": "^5.1.7",
     "tailwindcss": "^3.4.1"
   },
