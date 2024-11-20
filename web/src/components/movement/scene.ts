@@ -121,6 +121,8 @@ function addPoint(data: SocketData) {
     sensor.accelarationY === 0 &&
     sensor.accelarationZ === 0
   ) {
+    lastPoint = new THREE.Vector3(0, 0, 0);
+    lastSpeed = new THREE.Vector3(0, 0, 0);
     return;
   }
 
