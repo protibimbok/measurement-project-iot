@@ -1,8 +1,8 @@
 import http from "http";
 import express from "express";
-import sqlite3 from "sqlite3";
 import cors from "cors";
 import { asyncQuery, asyncSql, getPage } from "./helper.js";
+import db from "./db.js";
 import { createWebSocketServer } from "./socket.js";
 
 const app = express();
@@ -11,11 +11,6 @@ const server = http.createServer(app);
 createWebSocketServer(server);
 
 const port = 3000;
-const db = new sqlite3.Database("sensors.db");
-db.run(
-  "CREATE TABLE IF NOT EXISTS sensor_entries (id INTEGER PRIMARY KEY, value TEXT, timestamp INTEGER)"
-);
-
 app.use(cors());
 
 app.use(express.json());
