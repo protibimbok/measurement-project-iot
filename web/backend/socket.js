@@ -1,6 +1,5 @@
 import { WebSocketServer } from "ws";
-import { asyncSql } from "./helper.js";
-import db from "./db.js";
+import { asyncSql } from "./db.js";
 
 const webClients = [];
 
@@ -28,7 +27,6 @@ export const createWebSocketServer = (server) => {
           data.timestamp = lastTimestamp;
           webClients.forEach((client) => client.send(data2));
           asyncSql(
-            db,
             "INSERT INTO sensor_entries (value, timestamp) VALUES (?, ?)",
             [JSON.stringify(data), lastTimestamp]
           ).then(([err]) => {

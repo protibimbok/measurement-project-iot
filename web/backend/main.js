@@ -1,9 +1,9 @@
 import http from "http";
 import express from "express";
 import cors from "cors";
-import { asyncQuery, asyncSql, getPage } from "./helper.js";
-import db from "./db.js";
+import { asyncQuery, asyncSql, getPage } from "./db.js";
 import { createWebSocketServer } from "./socket.js";
+import { copyFile } from "fs/promises";
 
 const app = express();
 const server = http.createServer(app);
@@ -22,7 +22,6 @@ app.post("/", async (req, res) => {
     delete body.timestamp;
   }
   const [err] = await asyncSql(
-    db,
     "INSERT INTO sensor_entries (value, timestamp) VALUES (?, ?, ?)",
     [JSON.stringify(body), timestamp]
   );
@@ -35,7 +34,8 @@ app.post("/", async (req, res) => {
 });
 
 app.get("/erase", async (req, res) => {
-  await asyncSql(db, "DELETE FROM `sensor_entries`");
+  await copyFile("sensors.db", `sensors_${Date.now()}.db.bak`);
+  await asyncSql("DELETE FROM `sensor_entries`");
   res.json({
     message: "Data cleared successfully!",
   });
@@ -55,7 +55,7 @@ app.get("/refresh", async (req, res) => {
     binds.push(last);
   }
 
-  const [err, rows] = await asyncQuery(db, sql, binds);
+  const [err, rows] = await asyncQuery(sql, binds);
 
   if (err) {
     return res.status(500).json({ error: err.message });
@@ -68,7 +68,7 @@ app.get("/refresh", async (req, res) => {
 
 app.get("/page", async (req, res) => {
   const { page, last } = req.query;
-  const rows = await getPage(db, parseInt(page), parseInt(last));
+  const rows = await getPage(parseInt(page), parseInt(last));
   res.json({
     data: rows || [],
   });

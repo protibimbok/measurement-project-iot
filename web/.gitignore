@@ -26,5 +26,6 @@ dist-ssr
 venv
 **/__pycache__
 *.sqlite
+*.bak
 *.db
 *-journal
