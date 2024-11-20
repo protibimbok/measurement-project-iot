@@ -121,7 +121,6 @@ function addPoint(data: SocketData) {
     sensor.accelarationY === 0 &&
     sensor.accelarationZ === 0
   ) {
-    lastPoint = new THREE.Vector3(0, 0, 0);
     lastSpeed = new THREE.Vector3(0, 0, 0);
     return;
   }
@@ -153,7 +152,12 @@ function addPoint(data: SocketData) {
   }
 
   // Update the tube geometry with the new points
-  updateTube();
+  try {
+    updateTube();
+  } catch (error) {
+    // eslint-disable-next-line no-debugger
+    debugger;
+  }
 
   // Adjust block tilt based on gyroscope data
   if (sensor.gyroX > 0.5 || sensor.gyroY > 0.5 || sensor.gyroZ > 0.5) {
@@ -193,12 +197,23 @@ function updateCamera() {
 }
 
 // Add lighting
-const light = new THREE.PointLight(0xffffff, 1, 50);
+const light = new THREE.PointLight(0xffffff, 2, 100); // Increased intensity and range
 light.position.set(5, 5, 10);
 scene.add(light);
 
-const ambientLight = new THREE.AmbientLight(0x404040);
+// Add ambient light with higher intensity
+const ambientLight = new THREE.AmbientLight(0x606060, 1.5); // Increased intensity
 scene.add(ambientLight);
+
+// Add a hemisphere light for natural ambient effect
+const hemisphereLight = new THREE.HemisphereLight(0xaaaaaa, 0x444444, 1.0); // Sky and ground colors
+hemisphereLight.position.set(0, 50, 0);
+scene.add(hemisphereLight);
+
+// Optional: Add a directional light for strong directional shadows
+const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2);
+directionalLight.position.set(10, 10, 10);
+scene.add(directionalLight);
 
 let isRunning = false;
 
