@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
-import { addMessageListener, SocketData } from "../../utils/socket";
+import { addMessageListener } from "../../utils/socket";
+import { SocketData } from "../../utils/types";
 
 // Create the scene, camera, and renderer
 const scene = new THREE.Scene();
@@ -17,13 +18,15 @@ renderer.setPixelRatio(window.devicePixelRatio);
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true; // Smooth controls
 controls.dampingFactor = 0.1;
+controls.enableZoom = true;
 
 // Initialize variables
 const curvePoints: THREE.Vector3[] = [
   new THREE.Vector3(0, 0, 0),
-  new THREE.Vector3(1, 1, 1),
-  new THREE.Vector3(2, 0, -1),
+  new THREE.Vector3(0, 0, 0.1),
+  new THREE.Vector3(0, 0.1, 0),
 ];
+
 const maxPoints = 50; // Maximum points to keep on the curve
 const tubeRadius = 0.2; // Thickness of the tube
 let tubeMesh: THREE.Mesh | null = null;
@@ -47,6 +50,14 @@ try {
 }
 
 // Function to create and update the tube geometry
+const blockGeometry = new THREE.BoxGeometry(2, 1, 0.5); // Dimensions of the block
+const blockMaterial = new THREE.MeshStandardMaterial({
+  color: 0xffff00, // Yellow color for visibility
+});
+
+const headBlock = new THREE.Mesh(blockGeometry, blockMaterial);
+scene.add(headBlock);
+
 function updateTube() {
   const curve = new THREE.CatmullRomCurve3(curvePoints, false);
 
@@ -83,6 +94,13 @@ function updateTube() {
   // Create a new tube mesh
   tubeMesh = new THREE.Mesh(tubeGeometry, tubeMaterial);
   scene.add(tubeMesh);
+
+  // Update or create the head block
+  if (curvePoints.length > 0) {
+    const headPosition = curvePoints[curvePoints.length - 1];
+    // Position the block at the head of the path
+    headBlock.position.copy(headPosition);
+  }
 }
 
 // Add initial curve
@@ -92,16 +110,19 @@ let lastPoint = new THREE.Vector3(0, 0, 0);
 let lastSpeed = new THREE.Vector3(0, 0, 0);
 function addPoint(data: SocketData) {
   const sensor = data.value;
-
+  sensor.accelarationX =
+    Math.abs(sensor.accelarationX) < 0.5 ? 0 : sensor.accelarationX;
+  sensor.accelarationY =
+    Math.abs(sensor.accelarationY) < 0.5 ? 0 : sensor.accelarationY;
+  sensor.accelarationZ =
+    Math.abs(sensor.accelarationZ) < 0.5 ? 0 : sensor.accelarationZ;
   if (
-    Math.abs(sensor.accelarationX) < 0.5 &&
-    Math.abs(sensor.accelarationY) < 1.5 &&
-    Math.abs(sensor.accelarationZ) < 0.3
+    sensor.accelarationX === 0 &&
+    sensor.accelarationY === 0 &&
+    sensor.accelarationZ === 0
   ) {
     return;
   }
-
-  console.log(sensor);
 
   const interVal = sensor.interval / 1000;
   const newPoint = new THREE.Vector3(
@@ -131,6 +152,15 @@ function addPoint(data: SocketData) {
 
   // Update the tube geometry with the new points
   updateTube();
+
+  // Adjust block tilt based on gyroscope data
+  if (sensor.gyroX > 0.5 || sensor.gyroY > 0.5 || sensor.gyroZ > 0.5) {
+    headBlock.rotation.set(
+      sensor.gyroX * Math.PI, // Convert to radians for Three.js
+      sensor.gyroY * Math.PI,
+      sensor.gyroZ * Math.PI
+    );
+  }
 }
 
 addMessageListener(addPoint);
@@ -186,4 +216,12 @@ export const getDomElement = (width: number, height: number) => {
   bounds.y = height / 2;
   bounds.z = Math.sqrt(width * width + height * height) / 2;
   return renderer.domElement;
+};
+
+
+export const resetTrace = () => {
+  curvePoints.splice(3, curvePoints.length);
+  lastPoint = new THREE.Vector3(0, 0, 0);
+  lastSpeed = new THREE.Vector3(0, 0, 0);
+  updateTube();
 };

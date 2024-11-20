@@ -1,6 +1,7 @@
 import { LegacyRef, useEffect, useRef, useState } from "react";
 import { Chart, registerables } from "chart.js";
 import { DataPoint } from "../utils/types";
+import { addListener, removeListener } from "../utils/events";
 
 // Register necessary Chart.js plugins
 Chart.register(...registerables);
@@ -64,7 +65,7 @@ interface ChartProps {
   name: string;
 }
 
-const LINE_ENTRIES = 10;
+const LINE_ENTRIES = 100;
 
 export default function LineChart({ name }: ChartProps) {
   const canvasRef = useRef<HTMLCanvasElement>();
@@ -85,20 +86,18 @@ export default function LineChart({ name }: ChartProps) {
     chartRef.current = chart;
 
     const data = dataRef.current;
-    // @ts-expect-error custom event
-    const addData = ({ detail }) => {
+    const addData = (detail: Record<string, DataPoint>) => {
       let min = data.times[0],
         max = data.times.at(-1) || 0;
-      detail[name].forEach((dataPoint: DataPoint) => {
-        data.times.push(dataPoint.timestamp);
-        data.values.push(dataPoint.value);
-        if (data.times.length > LINE_ENTRIES) {
-          data.times.shift();
-          data.values.shift();
-          min = data.times[0];
-        }
-        max = data.times[data.times.length - 1];
-      });
+      const dataPoint = detail[name];
+      data.times.push(dataPoint.timestamp);
+      data.values.push(dataPoint.value);
+      if (data.times.length > LINE_ENTRIES) {
+        data.times.shift();
+        data.values.shift();
+        min = data.times[0];
+      }
+      max = data.times[data.times.length - 1];
 
       minMaxRef.current.min = min;
       minMaxRef.current.max = max;
@@ -114,13 +113,24 @@ export default function LineChart({ name }: ChartProps) {
       chart.update();
     };
 
-    // @ts-expect-error custom event
-    document.addEventListener("newData", addData);
+    const clear = (cName: string) => {
+      if (cName !== name) {
+        return;
+      }
+      dataRef.current.times = [];
+      dataRef.current.values = [];
+      data.times = [];
+      data.values = [];
+      chart.update();
+    }
+
+    addListener("newEnvData", addData);
+    addListener("clearLineChart", clear);
     return () => {
       setChart(undefined);
       chart.destroy();
-      // @ts-expect-error custom event
-      document.removeEventListener("newData", addData);
+      removeListener("newEnvData", addData);
+      removeListener("clearLineChart", clear);
     };
   }, [name]);
 

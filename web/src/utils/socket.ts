@@ -1,17 +1,4 @@
-export interface SocketData {
-  timestamp: number;
-  value: {
-    accelarationX: number;
-    accelarationY: number;
-    accelarationZ: number;
-    gyroX: number;
-    gyroY: number;
-    gyroZ: number;
-    temperature: number;
-    gasValue: number;
-    interval: number;
-  };
-}
+import { SocketData } from "./types";
 
 const DATA_RECIEVE_CALLBACKS: Array<(data: SocketData) => void> = [];
 

@@ -18,6 +18,14 @@ WebSocketsClient webSocket;
 Adafruit_MPU6050 mpu;
 
 const int gasSensorPin = A0;  // MQ-2 connected to A0
+const float Vcc = 3.3;  // Supply voltage (3.3V for NodeMCU, adjust for 5V systems)
+const float RL = 10.0;  // Load resistance in kΩ (verify with your module)
+const float Ro = 9.83;  // Calibrated value in clean air (adjust based on your calibration)
+
+// Parameters from datasheet for specific gas
+const float m = -0.45;  // Slope from MQ-2 datasheet for the gas (e.g., LPG, CO, etc.)
+const float b = 2.3;    // Intercept from MQ-2 datasheet for the gas (e.g., LPG, CO, etc.)
+
 
 void sensor_setup() {
   // Initialize MPU6050
@@ -101,9 +109,12 @@ void loop() {
 
   // Gas Sensor Reading
   int gasValue = analogRead(gasSensorPin);  // Read analog value from MQ-2
-  float voltage =
-      gasValue *
-      (3.3 / 1023.0);  // Convert to voltage (NodeMCU ADC range: 0-3.3V)
+  float Vout = gasValue * (Vcc / 1023.0);  // Convert to voltage
+  float Rs = RL * (Vcc - Vout) / Vout;  // Calculate sensor resistance
+  float ratio = Rs / Ro;  // Rs / Ro ratio
+  
+  // Convert to ppm using logarithmic formula
+  float ppm = pow(10, (log10(ratio) - b) / m);
     
   String message = "{\"accelarationX\":\"" + String(accX) + "\"," +
                     "\"accelarationY\":\"" + String(accY) + "\"," +
@@ -112,7 +123,7 @@ void loop() {
                     "\"gyroY\":\"" + String(gyroY) + "\"," +
                     "\"gyroZ\":\"" + String(gyroZ) + "\"," +
                     "\"temperature\":\"" + String(temperature) + "\"," +
-                    "\"gasValue\":\"" + String(voltage) + "\"," +
+                    "\"gas\":\"" + String(ppm) + "\"," +
                     "\"interval\":\"" + String(diff) + "\"}";
   
 

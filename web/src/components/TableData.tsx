@@ -1,5 +1,6 @@
 import { Fragment } from "react";
 import { usePaginatedData } from "../utils/http";
+import { SocketData } from "../utils/types";
 
 const optionsDate = {
   day: "2-digit",
@@ -31,9 +32,10 @@ const TableData = () => {
             <tr className="bg-white sticky top-0">
               <th></th>
               <th>Time</th>
-              <th>Heart Rate</th>
-              <th>Temperature</th>
-              <th>SpO2</th>
+              <th>Accelaration (X, Y, Z) m/s^2</th>
+              <th>Gyro (X, Y, Z) rad/s^2</th>
+              <th>Temperature (C)</th>
+              <th>Gas (ppm)</th>
             </tr>
           </thead>
           <tbody>
@@ -56,11 +58,14 @@ const TableData = () => {
                     <td>
                       <div className="skeleton h-4 w-20"></div>
                     </td>
+                    <td>
+                      <div className="skeleton h-4 w-20"></div>
+                    </td>
                   </tr>
                 );
               }
-              const val = JSON.parse(entry.value);
-              const date = new Date(entry.timestamp * 1000);
+              const val: SocketData["value"] = JSON.parse(entry.value);
+              const date = new Date(entry.timestamp);
 
               const formattedDate = date
                 .toLocaleDateString("en-US", optionsDate)
@@ -74,9 +79,15 @@ const TableData = () => {
                   <tr key={index}>
                     <th>{index + 1}</th>
                     <td>{formattedTime}</td>
-                    <td>{val.bp}</td>
-                    <td>{val.temp}</td>
-                    <td>{val.spo2}</td>
+                    <td>
+                      {val.accelarationX}, {val.accelarationY},{" "}
+                      {val.accelarationZ}
+                    </td>
+                    <td>
+                      {val.gyroX}, {val.gyroY}, {val.gyroZ}
+                    </td>
+                    <td>{val.temperature}</td>
+                    <td>{val.gas}</td>
                   </tr>
                 );
               }
@@ -89,9 +100,15 @@ const TableData = () => {
                   <tr key={index}>
                     <th>{index + 1}</th>
                     <td>{formattedTime}</td>
-                    <td>{val.bp}</td>
-                    <td>{val.temp}</td>
-                    <td>{val.spo2}</td>
+                    <td>
+                      {val.accelarationX}, {val.accelarationY},{" "}
+                      {val.accelarationZ}
+                    </td>
+                    <td>
+                      {val.gyroX}, {val.gyroY}, {val.gyroZ}
+                    </td>
+                    <td>{val.temperature}</td>
+                    <td>{val.gas}</td>
                   </tr>
                 </Fragment>
               );

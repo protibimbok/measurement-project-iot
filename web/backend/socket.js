@@ -19,7 +19,7 @@ export const createWebSocketServer = (server) => {
           if (!lastTimestamp) {
             lastTimestamp = Date.now();
           } else {
-            lastTimestamp += data.interval;
+            lastTimestamp += parseInt(data.interval);
           }
           const data2 = JSON.stringify({
             value: data,
@@ -31,7 +31,7 @@ export const createWebSocketServer = (server) => {
             db,
             "INSERT INTO sensor_entries (value, timestamp) VALUES (?, ?)",
             [JSON.stringify(data), lastTimestamp]
-          ).then((err) => {
+          ).then(([err]) => {
             if (err) {
               console.error(err);
             }
