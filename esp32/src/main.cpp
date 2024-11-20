@@ -17,6 +17,8 @@ WebSocketsClient webSocket;
 
 Adafruit_MPU6050 mpu;
 
+const int LED_PIN = 2;
+
 const int gasSensorPin = A0;  // MQ-2 connected to A0
 const float Vcc = 3.3;  // Supply voltage (3.3V for NodeMCU, adjust for 5V systems)
 const float RL = 10.0;  // Load resistance in kΩ (verify with your module)
@@ -32,7 +34,7 @@ void sensor_setup() {
   if (!mpu.begin()) {
     Serial.println("Failed to find MPU6050 chip!");
     while (1) {
-      delay(10);
+      delay(100);
     }
   }
   Serial.println("MPU6050 Found!");
@@ -79,12 +81,20 @@ void webSocketEvent(WStype_t type, uint8_t* payload, size_t length) {
 
 void setup() {
   Serial.begin(9600);
+  pinMode(LED_PIN, OUTPUT);
 
+  digitalWrite(LED_PIN, LOW);
+  delay(1000);
+  
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {
     delay(1000);
     Serial.println("Connecting to Wi-Fi...");
   }
+
+  digitalWrite(LED_PIN, HIGH);
+  delay(1000);
+
   Serial.println("Connected to Wi-Fi!");
   sensor_setup();
   webSocket.begin(ws_host, ws_port, ws_path);
