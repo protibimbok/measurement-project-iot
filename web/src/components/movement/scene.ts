@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
+import { addMessageListener, SocketData } from "../../utils/socket";
 
 // Create the scene, camera, and renderer
 const scene = new THREE.Scene();
@@ -87,25 +88,38 @@ function updateTube() {
 // Add initial curve
 updateTube();
 
-// Function to add a new point to the curve
-function addPoint() {
-  const lastPoint = curvePoints[curvePoints.length - 1];
+let lastPoint = new THREE.Vector3(0, 0, 0);
+let lastSpeed = new THREE.Vector3(0, 0, 0);
+function addPoint(data: SocketData) {
+  const sensor = data.value;
+
+  if (
+    Math.abs(sensor.accelarationX) < 0.5 &&
+    Math.abs(sensor.accelarationY) < 1.5 &&
+    Math.abs(sensor.accelarationZ) < 0.3
+  ) {
+    return;
+  }
+
+  console.log(sensor);
+
+  const interVal = sensor.interval / 1000;
   const newPoint = new THREE.Vector3(
-    THREE.MathUtils.clamp(
-      lastPoint.x + (Math.random() - 0.5) * 2,
-      -bounds.x,
-      bounds.x
-    ),
-    THREE.MathUtils.clamp(
-      lastPoint.y + (Math.random() - 0.5) * 2,
-      -bounds.y,
-      bounds.y
-    ),
-    THREE.MathUtils.clamp(
-      lastPoint.z + (Math.random() - 0.5) * 2,
-      -bounds.z,
-      bounds.z
-    )
+    lastPoint.x +
+      lastSpeed.x * interVal +
+      0.5 * sensor.accelarationX * interVal * interVal,
+    lastPoint.y +
+      lastSpeed.y * interVal +
+      0.5 * sensor.accelarationY * interVal * interVal,
+    lastPoint.z +
+      lastSpeed.z * interVal +
+      0.5 * sensor.accelarationZ * interVal * interVal
+  );
+  lastPoint = newPoint;
+  lastSpeed = new THREE.Vector3(
+    lastSpeed.x + sensor.accelarationX * interVal,
+    lastSpeed.y + sensor.accelarationY * interVal,
+    lastSpeed.z + sensor.accelarationZ * interVal
   );
 
   curvePoints.push(newPoint);
@@ -118,6 +132,8 @@ function addPoint() {
   // Update the tube geometry with the new points
   updateTube();
 }
+
+addMessageListener(addPoint);
 
 // Smooth camera adjustments
 function updateCamera() {
@@ -160,9 +176,6 @@ function animate() {
   renderer.render(scene, camera);
 }
 animate();
-
-// Continuously add points to the curve
-setInterval(addPoint, 100);
 
 // Export function for dynamic resizing
 export const getDomElement = (width: number, height: number) => {

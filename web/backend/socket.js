@@ -21,12 +21,16 @@ export const createWebSocketServer = (server) => {
           } else {
             lastTimestamp += data.interval;
           }
-          const data2 = JSON.stringify(data);
+          const data2 = JSON.stringify({
+            value: data,
+            timestamp: lastTimestamp,
+          });
+          data.timestamp = lastTimestamp;
           webClients.forEach((client) => client.send(data2));
           asyncSql(
             db,
             "INSERT INTO sensor_entries (value, timestamp) VALUES (?, ?)",
-            [data2, lastTimestamp]
+            [JSON.stringify(data), lastTimestamp]
           ).then((err) => {
             if (err) {
               console.error(err);

@@ -1,3 +1,20 @@
+export interface SocketData {
+  timestamp: number;
+  value: {
+    accelarationX: number;
+    accelarationY: number;
+    accelarationZ: number;
+    gyroX: number;
+    gyroY: number;
+    gyroZ: number;
+    temperature: number;
+    gasValue: number;
+    interval: number;
+  };
+}
+
+const DATA_RECIEVE_CALLBACKS: Array<(data: SocketData) => void> = [];
+
 function createWebSocket() {
   const ws = new WebSocket("ws://localhost:3000");
 
@@ -9,7 +26,10 @@ function createWebSocket() {
   ws.onmessage = (event) => {
     try {
       const data = JSON.parse(event.data);
-      console.log(data);
+      for (const key in data.value) {
+        data.value[key] = parseFloat(data.value[key]);
+      }
+      DATA_RECIEVE_CALLBACKS.forEach((callback) => callback(data));
     } catch (error) {
       console.error(error);
     }
@@ -19,11 +39,10 @@ function createWebSocket() {
     console.log(
       "Disconnected from WebSocket server. Reconnecting in 3 seconds..."
     );
-    setTimeout(() => createWebSocket(), 3000);
+    // setTimeout(() => createWebSocket(), 3000);
   };
 
-  ws.onerror = (error) => {
-    console.error("WebSocket error:", error);
+  ws.onerror = () => {
     ws.close();
   };
 
@@ -31,3 +50,11 @@ function createWebSocket() {
 }
 
 createWebSocket();
+
+export const addMessageListener = (callback: (data: SocketData) => void) => {
+  DATA_RECIEVE_CALLBACKS.push(callback);
+};
+
+export const removeMessageListener = (callback: (data: SocketData) => void) => {
+  DATA_RECIEVE_CALLBACKS.splice(DATA_RECIEVE_CALLBACKS.indexOf(callback), 1);
+};
