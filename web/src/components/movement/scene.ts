@@ -198,11 +198,23 @@ scene.add(light);
 const ambientLight = new THREE.AmbientLight(0x404040);
 scene.add(ambientLight);
 
+let isRunning = false;
+
+addListener("startRecording", () => {
+  isRunning = true;
+});
+
+addListener("stopRecording", () => {
+  isRunning = false;
+});
+
 // Animation loop
 function animate() {
   requestAnimationFrame(animate);
   controls.update(); // Update controls for interactivity
-  updateCamera();
+  if (isRunning) {
+    updateCamera();
+  }
   renderer.render(scene, camera);
 }
 animate();
@@ -217,7 +229,6 @@ export const getDomElement = (width: number, height: number) => {
   bounds.z = Math.sqrt(width * width + height * height) / 2;
   return renderer.domElement;
 };
-
 
 export const resetTrace = () => {
   curvePoints.splice(3, curvePoints.length);
