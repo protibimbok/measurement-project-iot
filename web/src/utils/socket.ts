@@ -42,7 +42,7 @@ function createWebSocket() {
       "Disconnected from WebSocket server. Reconnecting in 3 seconds..."
     );
     ws = null;
-    // setTimeout(() => createWebSocket(), 3000);
+    setTimeout(() => createWebSocket(), 3000);
   };
 
   ws.onerror = () => {
