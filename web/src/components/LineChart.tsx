@@ -43,8 +43,8 @@ function createLineChart(
           position: "bottom",
           ticks: {
             callback: (value) => {
-              const date = new Date((value as number) * 1000);
-              return date.toTimeString().split(" ")[0];
+              const date = new Date((value as number));
+              return date.toTimeString().split(" ")[0].split(':').slice(0, 2).join(':');
             },
           },
         },
