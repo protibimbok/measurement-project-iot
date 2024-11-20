@@ -1,8 +1,7 @@
 import { useEffect } from "react";
 import LineChart from "./LineChart";
 import { DataPoint, SocketData } from "../utils/types";
-import { addMessageListener, removeMessageListener } from "../utils/socket";
-import { emitEvent } from "../utils/events";
+import { addListener, emitEvent, removeListener } from "../utils/events";
 
 const EnvData = () => {
   useEffect(() => {
@@ -18,8 +17,8 @@ const EnvData = () => {
         },
       });
     };
-    addMessageListener(onData);
-    return () => removeMessageListener(onData);
+    addListener("sensorData", onData);
+    return () => removeListener("sensorData", onData);
   }, []);
 
   return (

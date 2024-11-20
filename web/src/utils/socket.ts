@@ -1,22 +1,37 @@
-import { SocketData } from "./types";
-
-const DATA_RECIEVE_CALLBACKS: Array<(data: SocketData) => void> = [];
-
+import { emitEvent } from "./events";
+let ws: WebSocket | null = null;
 function createWebSocket() {
-  const ws = new WebSocket("ws://localhost:3000");
+  ws = new WebSocket("ws://localhost:3000");
 
   ws.onopen = () => {
     console.log("Connected to WebSocket server");
-    ws.send(JSON.stringify({ web: true }));
+    ws?.send(JSON.stringify({ web: true, action: "connect" }));
   };
 
   ws.onmessage = (event) => {
     try {
       const data = JSON.parse(event.data);
-      for (const key in data.value) {
-        data.value[key] = parseFloat(data.value[key]);
+      switch (data.action) {
+        case "start":
+          emitEvent("startRecording", null);
+          break;
+        case "stop":
+          emitEvent("stopRecording", null);
+          break;
+        case "connect":
+          if (data.isRecording) {
+            emitEvent("startRecording", null);
+          } else {
+            emitEvent("stopRecording", null);
+          }
+          break;
+        default:
+          for (const key in data.value) {
+            data.value[key] = parseFloat(data.value[key]);
+          }
+          emitEvent("sensorData", data);
+          break;
       }
-      DATA_RECIEVE_CALLBACKS.forEach((callback) => callback(data));
     } catch (error) {
       console.error(error);
     }
@@ -26,11 +41,13 @@ function createWebSocket() {
     console.log(
       "Disconnected from WebSocket server. Reconnecting in 3 seconds..."
     );
+    ws = null;
     // setTimeout(() => createWebSocket(), 3000);
   };
 
   ws.onerror = () => {
-    ws.close();
+    ws?.close();
+    ws = null;
   };
 
   return ws;
@@ -38,10 +55,10 @@ function createWebSocket() {
 
 createWebSocket();
 
-export const addMessageListener = (callback: (data: SocketData) => void) => {
-  DATA_RECIEVE_CALLBACKS.push(callback);
+export const startRecording = () => {
+  ws?.send(JSON.stringify({ web: true, action: "start" }));
 };
 
-export const removeMessageListener = (callback: (data: SocketData) => void) => {
-  DATA_RECIEVE_CALLBACKS.splice(DATA_RECIEVE_CALLBACKS.indexOf(callback), 1);
+export const stopRecording = () => {
+  ws?.send(JSON.stringify({ web: true, action: "stop" }));
 };

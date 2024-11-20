@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
-import { addMessageListener } from "../../utils/socket";
 import { SocketData } from "../../utils/types";
+import { addListener } from "../../utils/events";
 
 // Create the scene, camera, and renderer
 const scene = new THREE.Scene();
@@ -52,7 +52,7 @@ try {
 // Function to create and update the tube geometry
 const blockGeometry = new THREE.BoxGeometry(2, 1, 0.5); // Dimensions of the block
 const blockMaterial = new THREE.MeshStandardMaterial({
-  color: 0xffff00, // Yellow color for visibility
+  color: 0xffffff, // Yellow color for visibility
 });
 
 const headBlock = new THREE.Mesh(blockGeometry, blockMaterial);
@@ -163,7 +163,7 @@ function addPoint(data: SocketData) {
   }
 }
 
-addMessageListener(addPoint);
+addListener("sensorData", addPoint);
 
 // Smooth camera adjustments
 function updateCamera() {

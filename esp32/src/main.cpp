@@ -47,6 +47,11 @@ void sensor_setup() {
   delay(100);
 }
 
+
+
+unsigned long previousMillis = 0;
+bool isRunning = false;
+
 // Handle WebSocket events
 void webSocketEvent(WStype_t type, uint8_t* payload, size_t length) {
   switch (type) {
@@ -55,17 +60,22 @@ void webSocketEvent(WStype_t type, uint8_t* payload, size_t length) {
       break;
     case WStype_CONNECTED:
       Serial.println("WebSocket connected.");
-      // webSocket.sendTXT("Hello from ESP8266!");
+      webSocket.sendTXT("{\"action\":\"connect\"}");
       break;
     case WStype_TEXT:
-      // Serial.printf("Message received: %s\n", payload);
+      Serial.printf("Message received: %s\n", payload);
+      if (strcmp((char*)payload, "start") == 0) {
+        isRunning = true;
+        previousMillis = millis();
+      } else if (strcmp((char*)payload, "stop") == 0) {
+        isRunning = false;
+      }
+
       break;
     default:
       break;
   }
 }
-
-unsigned long previousMillis = 0;
 
 void setup() {
   Serial.begin(9600);
@@ -92,7 +102,7 @@ void loop() {
   unsigned long currentMillis = millis();
   unsigned long diff = currentMillis - previousMillis;
 
-  if (currentMillis - previousMillis < 300) {
+  if (!isRunning || diff < 300) {
     return;
   }
   previousMillis = currentMillis;

@@ -4,6 +4,7 @@ import cn from "classnames";
 import TableData from "./components/TableData";
 import MovementRenderer from "./components/movement";
 import EnvData from "./components/EnvData";
+import RecordControl from "./components/RecordControl";
 
 function App() {
   const [tab, setTab] = useState(0);
@@ -35,13 +36,16 @@ function App() {
             </svg>
           </div>
           <p className="text-xl font-bold ml-3">Embedded Systems</p>
-          <button
-            className="ml-auto btn btn-outline btn-error btn-sm"
-            type="button"
-            onClick={clearData}
-          >
-            Clear Data
-          </button>
+          <div className="ml-auto flex items-center gap-2">
+            <RecordControl />
+            <button
+              className="btn btn-outline btn-error btn-sm"
+              type="button"
+              onClick={clearData}
+            >
+              Clear Data
+            </button>
+          </div>
         </div>
       </div>
       <div className="container mx-auto mt-10">
