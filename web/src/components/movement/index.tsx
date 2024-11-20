@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { getDomElement } from "./scene";
+import { getDomElement, resetTrace } from "./scene";
 
 const MovementRenderer = () => {
   const elRef = useRef<HTMLDivElement>(null);
@@ -28,7 +28,18 @@ const MovementRenderer = () => {
     };
   }, []);
 
-  return <div ref={elRef} className="" />;
+  return (
+    <div className="relative">
+      <div ref={elRef} />
+      <button
+        type="button"
+        className="absolute right-0 bottom-full mb-7 -mr-5 px-3 py-2 border rounded-lg text-xs font-bold hover:bg-red-200"
+        onClick={resetTrace}
+      >
+        CLEAR
+      </button>
+    </div>
+  );
 };
 
 export default MovementRenderer;
